@@ -47,7 +47,7 @@ export default function EntryRow({ entry, index, onChange }: EntryRowProps) {
             rows={3}
             value={entry.raw_name}
             onChange={(e) => update({ raw_name: e.target.value })}
-            placeholder='e.g. SPECTRA (Cheese, Mushroom) or Bardiglo Rift, Bruno Rainforest'
+            placeholder='e.g. SPECTRA (Cheese, Mushroom), RD-01 to RD-43, or Bardiglo Rift, Bruno Rainforest'
           />
           <ParsePreview rawName={entry.raw_name} />
         </label>

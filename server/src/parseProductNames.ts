@@ -6,6 +6,53 @@ function titleCase(str: string): string {
     .join(' ');
 }
 
+interface RangeToken {
+  prefix: string;
+  num: number;
+  padWidth: number;
+}
+
+function parseRangeToken(token: string): RangeToken | null {
+  const match = token.trim().match(/^(.+?)(\d+)$/);
+  if (!match) return null;
+
+  return {
+    prefix: match[1],
+    num: Number.parseInt(match[2], 10),
+    padWidth: match[2].length,
+  };
+}
+
+function expandRange(startToken: string, endToken: string): string[] | null {
+  const start = parseRangeToken(startToken);
+  const end = parseRangeToken(endToken);
+  if (!start || !end) return null;
+  if (start.prefix !== end.prefix) return null;
+  if (start.num > end.num) return null;
+
+  const count = end.num - start.num + 1;
+  if (count > 500) return null;
+
+  const padWidth = Math.max(start.padWidth, end.padWidth);
+  const results: string[] = [];
+
+  for (let i = start.num; i <= end.num; i++) {
+    results.push(`${start.prefix}${String(i).padStart(padWidth, '0')}`);
+  }
+
+  return results;
+}
+
+function parseStandaloneSegment(segment: string): string[] {
+  const rangeMatch = segment.match(/^(.+?)\s+to\s+(.+)$/i);
+  if (rangeMatch) {
+    const expanded = expandRange(rangeMatch[1], rangeMatch[2]);
+    if (expanded) return expanded;
+  }
+
+  return [titleCase(segment)];
+}
+
 export function parseProductNames(input: string): string[] {
   if (!input.trim()) return [];
 
@@ -14,7 +61,6 @@ export function parseProductNames(input: string): string[] {
   const groupRegex = /([A-Za-z][A-Za-z\s]*?)\s*\(([^)]+)\)/g;
 
   let match: RegExpExecArray | null;
-  let lastIndex = 0;
   const consumedRanges: Array<[number, number]> = [];
 
   while ((match = groupRegex.exec(normalized)) !== null) {
@@ -29,7 +75,6 @@ export function parseProductNames(input: string): string[] {
     }
 
     consumedRanges.push([match.index, match.index + match[0].length]);
-    lastIndex = match.index + match[0].length;
   }
 
   let remainder = normalized;
@@ -45,7 +90,7 @@ export function parseProductNames(input: string): string[] {
       .filter(Boolean);
 
     for (const name of standalone) {
-      results.push(titleCase(name));
+      results.push(...parseStandaloneSegment(name));
     }
   }
 
